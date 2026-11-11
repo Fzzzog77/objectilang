@@ -31,5 +31,10 @@
       <artifactId>rascal</artifactId>
       <version>${rascal.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.rascalmpl</groupId>
+      <artifactId>typepal</artifactId>
+      <version>0.17.4</version>
+    </dependency>
   </dependencies>
 </project>

@@ -20,23 +20,15 @@ data AStatement
   | methodStmt(AMethodDef mDef)
   | valDecl(str name, list[ATypeAnn] annotation, AExpression expr)
   | varDecl(str name, list[ATypeAnn] annotation, AExpression expr)
-  | ifStmt(AExpression cond, ABody thenBody, ABody elseBody)
-  | forEach(str loopVar, str generator, AInvocation iterable, ABody body)
-  | forEachTuple(list[str] loopVars, str generator, AInvocation iterable, ABody body)
-  | forRange(str loopVar, AExpression initial, AExpression cond, str stepVar, ABody body)
-  | printStmt(list[AExpression] arg)
-  | printlnStmt(list[AExpression] arg)
+  | forEach(str loopVar, str generator, AInvocation iterable, AStatement body)
+  | forEachTuple(list[str] loopVars, str generator, AInvocation iterable, AStatement body)
+  | forRange(str loopVar, AExpression initial, AExpression cond, str stepVar, AStatement body)
   | exprStmt(AExpression expr)
   | emptyStmt()
   ;
 
 data ABlock
   = block(list[AStatement] statements)
-  ;
-
-data ABody
-  = blockBody(ABlock blk)
-  | singleBody(AStatement stmt)
   ;
 
 data AObjectDef
@@ -51,6 +43,8 @@ data AExtension
 data AMethodDef
   = methodAssign(str objName, list[str] path, AParams requiredParameters,
                  list[ATypeAnn] returnType, ABlock body)
+  | methodDecl(str objName, list[str] path, AParams requiredParameters,
+               list[ATypeAnn] returnType)                  // sin cuerpo (abstracto)
   | methodDef(list[str] name, list[AParams] parameters,
               list[ATypeAnn] returnType, ABlock body)
   | overrideDef(list[str] name, list[AParams] parameters,
@@ -115,12 +109,17 @@ data AStringTail
 data AExpression
   = intLit(int n)
   | floatLit(real r)
+  | charLit(str c)
   | stringLit(AStringLit text)
   | trueLit()
   | falseLit()
   | callExpr(AInvocation call)
   | newObject(str className, list[ATypeArgs] targs, list[ACallArgs] args,
               list[AObjectBody] body)
+  | blockExpr(ABlock blk)
+  | printExpr(list[AExpression] arg)
+  | printlnExpr(list[AExpression] arg)
+  | ifExpr(AExpression cond, AExpression thenExpr, AExpression elseExpr)
   | negate(AExpression operand)
   | logicalNot(AExpression operand)
   | power(AExpression lhs, AExpression rhs)

@@ -34,6 +34,12 @@ lexical TypeName
 lexical Digits   = [0-9]+ !>> [0-9];
 lexical IntLit   = @category="Constant" Digits;
 lexical FloatLit = @category="Constant" Digits "." Digits;
+// Caracteres: 'a', '\n', '\'' (una unica unidad lexica)
+lexical CharChar
+  = ![\'\\\n\r]
+  | [\\] [\'\\nrt]
+  ;
+lexical CharLit = @category="Constant" "\'" CharChar "\'";
 
 // Operador/palabra de los ciclos: "<-" o "in"
 lexical Generator = "\<-" | "in" !>> [a-zA-Z0-9];
@@ -42,7 +48,8 @@ lexical Generator = "\<-" | "in" !>> [a-zA-Z0-9];
 
 lexical StringChar
   = ![\"\\$\n\r]
-  | [$] !>> [{]
+  | [$] !>> [{a-zA-Z]
+  | [$] [a-zA-Z] [a-zA-Z0-9]* !>> [a-zA-Z0-9]   // interpolacion corta: $nombre
   | [\\] [\"\\nrt$]
   ;
 
@@ -62,30 +69,24 @@ syntax Statement
   | methodStmt: MethodDef
   | valDecl: "val" Id TypeAnn? "=" Expression
   | varDecl: "var" Id TypeAnn? "=" Expression
-  | ifStmt: "if" Expression "then" Body "else" Body
-  | forEach: "for" "(" Id Generator Invocation ")" Body
-  | forEachTuple: "for" "(" "(" {Id ","}+ ")" Generator Invocation ")" Body
-  | forRange: "for" "(" Id "=" Expression "," Expression "," Id "++" ")" Body
-  | printStmt: "print" "(" Expression? ")"
-  | printlnStmt: "println" "(" Expression? ")"
+  | forEach: "for" "(" Id Generator Invocation ")" Statement
+  | forEachTuple: "for" "(" "(" {Id ","}+ ")" Generator Invocation ")" Statement
+  | forRange: "for" "(" Id "=" Expression "," Expression "," Id "++" ")" Statement
   | exprStmt: Expression
   | emptyStmt: ";"
   ;
 
+// Un bloque tambien es una expresion (su valor es el de la ultima sentencia),
+// asi que el cuerpo de un for o de una rama del if puede ser un bloque.
 syntax Block
   = block: "{" Statement* "}"
   ;
 
-// Cuerpo de if/for
-syntax Body
-  = blockBody: Block
-  | singleBody: Statement
-  ;
-
 // Objetos y metodos
 
+// (!>> "{": si sigue una llave, es el cuerpo del objeto y no un bloque aparte)
 syntax ObjectDef
-  = objectDef: "object" Id Extension? TypeParams? Params? Block?
+  = objectDef: "object" Id Extension? TypeParams? Params? Block? !>> "{"
   ;
 
 syntax Extension
@@ -94,6 +95,9 @@ syntax Extension
 
 syntax MethodDef
   = methodAssign: Id "." {Id "."}+ "=" "method" Params TypeAnn? Block
+  // sin cuerpo: metodo abstracto. `() !>> "{"`: si lo que sigue es una llave,
+  // es el cuerpo del metodo (methodAssign) y no un bloque aparte
+  | methodDecl: Id "." {Id "."}+ "=" "method" Params TypeAnn? () !>> "{"
   | methodDef: "method" Id? Params? TypeAnn? "=" Block
   | methodDef: "method" Id? Params? TypeAnn? Block
   | overrideDef: "override" Id? Params? TypeAnn? "=" Block
@@ -161,11 +165,15 @@ syntax StringTail
 syntax Expression
   = intLit: IntLit
   | floatLit: FloatLit
+  | charLit: CharLit
   | stringLit: StringLit
   | trueLit: "true"
   | falseLit: "false"
   | callExpr: Invocation
-  | newObject: "new" Id TypeArgs? CallArgs? ObjectBody? !>> "("
+  | newObject: "new" Id TypeArgs? CallArgs? ObjectBody? !>> "(" !>> "{"
+  | blockExpr: Block
+  | printExpr: "print" "(" Expression? ")"       // valen el texto impreso
+  | printlnExpr: "println" "(" Expression? ")"
   | bracket "(" Expression ")"
   > negate: "-" Expression
   | logicalNot: "neg" Expression
@@ -186,4 +194,7 @@ syntax Expression
               )
   > left andExpr: Expression "and" Expression
   > left orExpr: Expression "or" Expression
+  // if como expresion (la de menor prioridad: la rama else se extiende lo mas
+  // posible, `if c then a else b + 1` es `if c then a else (b + 1)`)
+  > ifExpr: "if" Expression "then" Expression "else" Expression
   ;
