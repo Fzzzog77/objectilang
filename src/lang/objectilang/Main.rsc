@@ -12,7 +12,9 @@ module lang::objectilang::Main
 import IO;
 import List;
 import Message;
+import Exception;
 import ParseTree;
+import lang::objectilang::Syntax;
 import lang::objectilang::Implode;
 import lang::objectilang::Checker;
 import lang::objectilang::Eval;
