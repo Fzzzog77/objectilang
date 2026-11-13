@@ -246,3 +246,21 @@ test bool tReglaMetodoInexistente() =
 test bool tReglaObjetoInexistente() = !wellTyped("val p = new Person");
 
 test bool tMiembroDeNoObjeto() = !wellTyped("val x: Int = 1 println(x.f)");
+
+// Resta despues de una declaracion (ambiguedad reportada en el Proyecto 2)
+
+test bool tRestaEnDeclaracion() =
+  program([valDecl("x", [], subtract(intLit(1), intLit(2)))]) :=
+    loadAST("val x = 1 - 2");
+
+test bool tRestaConVariable() = wellTyped("val a = 5\nval x: Int = a - 2");
+
+test bool tRestaEnBloque() = parses("method f(): Int = { val y = 4 - 1\n y }");
+
+test bool tRestaEnRamaElse() =
+  program([valDecl("x", [], ifExpr(trueLit(), intLit(1), subtract(intLit(2), intLit(3))))]) :=
+    loadAST("val x = if true then 1 else 2 - 3");
+
+test bool tNegativoSigueSiendoSentencia() =
+  program([valDecl("x", [], intLit(1)), exprStmt(negate(intLit(2)))]) :=
+    loadAST("val x = 1\n(-2)");

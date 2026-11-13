@@ -15,12 +15,14 @@ import util::Reflective;
 import util::LanguageServer;
 import lang::objectilang::Syntax;
 import lang::objectilang::Checker;
+import lang::objectilang::Implode;
 
 private str LANG_NAME = "Objectilang";
 private set[str] LANG_EXTS = {"ol", "obj"};
 
 private Tree (str _input, loc _origin) objectilangParser() {
-  return ParseTree::parser(#start[Program]);
+  // mismo parser que run(): resuelve la ambiguedad de `val x = 1 - 2`
+  return Tree (str input, loc origin) { return parseObjectilang(input, origin); };
 }
 
 // Verificacion de tipos: los mensajes de TypePal se muestran en el editor
